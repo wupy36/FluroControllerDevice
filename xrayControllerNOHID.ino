@@ -17,8 +17,8 @@
 
 #include <Arduino.h>
 #include "BLEDevice.h"
-#include <esp_now.h>
-#include <WiFi.h>
+//#include <esp_now.h>
+//#include <WiFi.h>
 #include "MCP23017.h"
 
 #define DEVICE_NAME "Fluoro Sim Controls"
@@ -36,18 +36,18 @@ typedef struct struct_message {
 struct_message recieverData;
 
 void bluetoothTask(void*);
-void sendTestReport(uint8_t*);
+void sendTestReport(uint8_t*, uint8_t*);
 
 uint8_t joystick_values[10] = {0,0,0,0,0,0,0,0,0,0};
 uint8_t joystick_down[5] = {0,0,0,0,0};
-uint8_t buttons = 0x0;
-uint16_t externGPIO = 0x0;
+uint8_t portA = 0x0;
+uint8_t portB = 0x0;
 uint8_t externButtons = 0x0;
 bool isBleConnected = false;
 bool disableNormal = true;
 bool joysticksConn = true;
 
-MCP23017 mcp = MCP23017(0x20);
+MCP23017 mcp = MCP23017(0x24);
 
 void DataRecieveOtherDevice(const uint8_t * mac, const uint8_t *incomingData, int len) { // USED FOR RECIEVING DATA FROM ESP-NOW OTHER DEVICE
   memcpy(&recieverData, incomingData, sizeof(recieverData));
@@ -66,20 +66,24 @@ void setup() {
     pinMode(1,INPUT_PULLUP); // Stick 1 pushdown
     
       // ESP-NOW Functionality
-      WiFi.mode(WIFI_STA);
+     // WiFi.mode(WIFI_STA);
       // Init ESP-NOW
-      if (esp_now_init() != ESP_OK) {
-        Serial.println("Error initializing ESP-NOW");
-      }
+      //if (esp_now_init() != ESP_OK) {
+        //Serial.println("Error initializing ESP-NOW");
+      //}
       // Register reciever callback (cb) function
-      esp_now_register_recv_cb(DataRecieveOtherDevice);
+     // esp_now_register_recv_cb(DataRecieveOtherDevice);
       mcp.writeRegister(MCP23017Register::IPOL_A, (uint8_t)0xFF); // input polarity register A, inverts all input polarities.
       mcp.writeRegister(MCP23017Register::IPOL_B, (uint8_t)0xFF); // input polarity register B
       
-      externGPIO = (mcp.readRegister(MCP23017Register::GPIO_A) << 8) | mcp.readRegister(MCP23017Register::GPIO_B);
+      //externGPIO = (mcp.readRegister(MCP23017Register::GPIO_A) << 8) | mcp.readRegister(MCP23017Register::GPIO_B);
     
     // start Bluetooth task
     xTaskCreate(bluetoothTask, "bluetooth", 20000, NULL, 5, NULL);
+
+  delay(3000);          
+
+    
 }
 
 // Reads Joystick Inputs from pins 1-15.
@@ -93,9 +97,11 @@ void readAnalogValues(){ // assigns values starting at pin 1, in a [down, stickY
 
 void loop() {
   if (isBleConnected){
-    externButtons = (uint8_t)mcp.readRegister(MCP23017Register::GPIO_B);
+    portB = (uint8_t)mcp.readRegister(MCP23017Register::GPIO_B);
+    portA = (uint8_t)mcp.readRegister(MCP23017Register::GPIO_A);
+    //externGPIO = (mcp.readRegister(MCP23017Register::GPIO_A) << 8) | mcp.readRegister(MCP23017Register::GPIO_B);
     readAnalogValues(); // reads any connected joystick values.
-    sendTestReport(&externButtons);
+    sendTestReport(&portA, &portB);
     delay(10);
   }
 }
@@ -237,7 +243,7 @@ void begin_advertising(){
 }
 
 
-void IRAM_ATTR sendTestReport(uint8_t* buttonVal){ // broadcasts the input states, updating the characteristic 03C4's data in service 1848.
+void IRAM_ATTR sendTestReport(uint8_t* portA, uint8_t* portB){ // broadcasts the input states, updating the characteristic 03C4's data in service 1848.
   NEW_GamepadReport new_game_report = {
     .x1 = joystick_values[0],
     .y1 = joystick_values[1],
@@ -248,10 +254,10 @@ void IRAM_ATTR sendTestReport(uint8_t* buttonVal){ // broadcasts the input state
     .x4 = joystick_values[6],
     .y4 = joystick_values[7],
     .x5 = joystick_values[8],
-    .y5 = joystick_values[9],
+    .y5 = joystick_values[9], // 10 joystick bytes
     
-    .buttons1 = (uint8_t)*buttonVal,
-    .buttons2 = 0x0,
+    .buttons1 = (uint8_t)*portA, // MCP port A
+    .buttons2 = (uint8_t)*portB, // MCP port B
     .buttons3 = 0x0,
     .buttons4 = 0x0,
 

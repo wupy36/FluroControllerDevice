@@ -60,6 +60,43 @@ struct NEW_GamepadReport{
 4. Connect to "Fluoro Sim Controls" from your client device
 5. Read characteristic 0x03C4 from service 0x1848 to receive input data
 
+## Testing
+
+There are two primary methods for testing the ESP32-S3 Fluoroscopy Controller:
+
+### MATLAB Testing (R2023b)
+MATLAB provides built-in functionality to communicate with Bluetooth devices directly from the command console:
+
+1. Type `blelist` into the command console to display all advertising BLE devices visible to your computer
+2. Connect to the controller by executing: `b = ble("Fluoro Sim Controls")`
+3. Once connected, you'll see a box showing services and characteristics of the device
+4. Access the characteristic by running: `n = characteristic(b, "1848", "03C4")`
+5. Read the data packet with: `read(n)`
+6. Always clear the connection when finished by typing `clear` in the console
+
+**Note:** On disconnect, the controller is programmed to perform a software restart and will begin advertising again.
+
+### NRF Connect (Phone App)
+This free mobile application offers an alternative testing method:
+
+1. Scan for BLE devices (the app will show many more devices than MATLAB)
+2. Locate and connect to the "Fluoro Sim Controls" device
+3. View the service (0x1848) and characteristic (0x03C4)
+4. Test functionality by pressing buttons on the controller to observe value changes
+
+While NRF Connect is more accessible, it may be less intuitive than MATLAB for development purposes, particularly for viewing the complete characteristic data frame.
+
+### Integration Testing with Client Applications
+
+When integrating the controller with your client application:
+
+1. Implement client-side BLE connectivity using your platform's Bluetooth API
+2. Subscribe to the characteristic (0x03C4) notifications
+3. Parse the data according to the `NEW_GamepadReport` structure
+4. Verify all joysticks and buttons map correctly to your application's functions
+
+The client application should handle the BLE connection management and properly interpret the controller data packets based on the data structure defined in the technical documentation.
+
 ## Notes
 
 - The controller auto-restarts on client disconnect

@@ -52,6 +52,25 @@ struct NEW_GamepadReport{
 };
 ```
 
+## Setup
+
+1. Install [Arduino](https://www.arduino.cc/en/software) 
+2. Open `Arduino`
+3. Search for [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) within the Arduino via `Tools->Manage Libraries...`
+4. Search for [MCP23017](https://github.com/blemasle/arduino-mcp23017) within the Arduino via `Tools->Manage Libraries...`
+5. Go to `Tools->Board->Board Managers...` and install `esp32` by Espressif Systems set the board to `ESP32S3 Dev Module`
+6. For the COM link you will need to install [CP210x Universal Windows Driver](https://www.silabs.com/developer-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads)
+7. Code away!
+8. Connect to the esp32 board `Verify` and `Upload` your build. 
+
+IMPORTANT NOTE: First time you try to upload the code to the board, you might see this error:
+```
+"A Fatal error occured: Failed to connect to ESP32-S3: No Serial data received."
+```
+The solution for this problemis to Hold down the BOOT button and Pressing and Releasing the REST button while still holding the BOOT button. This will initiate Firmware Download mode, and you only need to do this once.
+
+Some tutorials suggest that you should hold the BOOT button while uploading the code. However, this is not neccessary in Arduino IDE (at least not for the board we are using).
+
 ## Getting Started
 
 1. Connect hardware according to the pinout specification
